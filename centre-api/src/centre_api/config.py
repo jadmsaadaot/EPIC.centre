@@ -139,12 +139,87 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
 
     JWT_OIDC_TEST_MODE = True
     # JWT_OIDC_ISSUER = _get_config('JWT_OIDC_TEST_ISSUER')
-    JWT_OIDC_TEST_AUDIENCE = os.getenv('JWT_OIDC_TEST_AUDIENCE')
-    JWT_OIDC_TEST_CLIENT_SECRET = os.getenv('JWT_OIDC_TEST_CLIENT_SECRET')
-    JWT_OIDC_TEST_ISSUER = os.getenv('JWT_OIDC_TEST_ISSUER')
+    JWT_OIDC_TEST_AUDIENCE = os.getenv('JWT_OIDC_TEST_AUDIENCE', 'centre-api')
+    JWT_OIDC_TEST_CLIENT_SECRET = os.getenv('JWT_OIDC_TEST_CLIENT_SECRET', 'secret')
+    JWT_OIDC_TEST_ISSUER = os.getenv('JWT_OIDC_TEST_ISSUER', 'http://localhost:8081/auth/realms/demo')
     JWT_OIDC_WELL_KNOWN_CONFIG = os.getenv('JWT_OIDC_WELL_KNOWN_CONFIG')
-    JWT_OIDC_TEST_ALGORITHMS = os.getenv('JWT_OIDC_TEST_ALGORITHMS')
+    JWT_OIDC_TEST_ALGORITHMS = os.getenv('JWT_OIDC_TEST_ALGORITHMS', 'RS256')
     JWT_OIDC_TEST_JWKS_URI = os.getenv('JWT_OIDC_TEST_JWKS_URI', default=None)
+
+    JWT_OIDC_TEST_KEYS = {
+        'keys': [
+            {
+                'kid': JWT_OIDC_TEST_AUDIENCE,
+                'kty': 'RSA',
+                'alg': 'RS256',
+                'use': 'sig',
+                'n': '3VRgQebxojvZlZv+rySZioGXjK5Ky4YOZ0LxFbQztwY93XaPeutDKAp7wNaYfRrx1Gwu0PpBgj+Lmg3vTqPvjR'
+                     'b0Uc23hr1cT68hHxgjIjvk7xXzGv66xwIPOWZXed4LcLbdCf67qvjjFT3ZD7poXnXM5lWlBHrIHQ5s7iUia9eHwoe96d'
+                     'DRzvDGrsoUvs1z5BdKvXby5usNQSWl6a0jrJ0KBatIY//9k8mwmDZ7iBEz4ag9ly1KXiwMQfzdSo5r/xX63sV/8P33Aj'
+                     'LtDEZYTUDr/YVMyh7G5MocyIDOM89dXpX3qdRY1RvTK0+Tg+hshMZQyEXO8qui/FrXhCrPVw==',
+                'e': 'AQAB',
+            }
+        ]
+    }
+
+    JWT_OIDC_TEST_PRIVATE_KEY_JWKS = {
+        'keys': [
+            {
+                'kid': JWT_OIDC_TEST_AUDIENCE,
+                'kty': 'RSA',
+                'alg': 'RS256',
+                'use': 'sig',
+                'n': '3VRgQebxojvZlZv+rySZioGXjK5Ky4YOZ0LxFbQztwY93XaPeutDKAp7wNaYfRrx1Gwu0PpBgj+Lmg3vTqPvjRb0Uc23hr'
+                     '1cT68hHxgjIjvk7xXzGv66xwIPOWZXed4LcLbdCf67qvjjFT3ZD7poXnXM5lWlBHrIHQ5s7iUia9eHwoe96dDRzvDGrsoUvs'
+                     '1z5BdKvXby5usNQSWl6a0jrJ0KBatIY//9k8mwmDZ7iBEz4ag9ly1KXiwMQfzdSo5r/xX63sV/8P33AjLtDEZYTUDr/YVMyh'
+                     '7G5MocyIDOM89dXpX3qdRY1RvTK0+Tg+hshMZQyEXO8qui/FrXhCrPVw==',
+                'e': 'AQAB',
+                'd': 'eXTgDcoqN5kYYh1kucAf8f4DqFPM/7rlFI2LtxlYd8uZD3sMaavJAqQeHUimDaFHrAZh+pQadttgRH35IPKddpNuJ6X4X'
+                     'Jx1l9THHEUmopaznvAwpFO9M5BRwnIC9wF+za/LxLxhSAWkt/dksljdBVknxA6jq72lKyzLYjRGm155+O8vBeEOctsgJoEDso'
+                     '5pIf4MxQVedD3dFORjAX2ufbsDhxhw3OV5rOpzYCQ4KCsOFYcEFWVQs2j/PSkUiby2rCmxfVn/FYfXgNhY'
+                     'lNPcEdYZ+wtTCazs'
+                     'j/VidQ4iu1R18e1b7fhp630+qzjRCPwNLZcdqWisgMNR/JfFKn5boQ==',
+                'p': 'APKukszUOTbKcZzuXVo3F+8V7ZCWqwF5UXM6WILoWXDdECf+OW2M6VeEcqwd2CyvX2NTSFXmtptgnfaDNb4x7cim9mO2ZED'
+                     'rxyqH8NzMSDrxeWGa710yz0zekI7xuvc5fzs0hP+paHBumBDIj5wLDFt25yAt7qLvmMh1v7B4rP+t',
+                'q': 'AOl50x3AM4yjrXeVw5V2IFKpYb4Ag4pJqjhuJcYOZCCijWo6fzV9ClvJGKjkAXvx3sktceq7pLzhTDyYbCq4uMe59ChRyHxi'
+                     'A9Mp7+FnVs0qrTue8GEpk3uG7+Ce7uYzSwcZGfP2mI3bdXqhc2399nleBWCawEB5S2GaGPY559uT',
+                'dp': 'AN1At+oy2m7Pp0FyOH4VmKaLkWmvU/0mBFJPsX64I0M46I/twaHVRLBbusic9QfYY9kEhwB6NaX3Mk0bVxYuIyI6xowmL8T'
+                      'YsV5fTgOf44KJwSZxwSVxO3pTt+v7C4B2VT8/JLqKUwOecNlsYTHdCMki4JmABv9Z/itU3w0fGGqJ',
+                'dq': 'fO4PJZA/BTZgD+k3arZ2vUSdZInp2Qlp6CAoXj49HaldekYq43gxHsQQSe8XTDc0OvnyRuR5VghIPvRgjMujNFwwZZK9cLE'
+                      'R0uBR147wR4BaidiWT6drn2Go4cypkMxJjVbFKGH/Z4jS5/eUSHrodDD3N6YW0WkWCPfn+3kos7k=',
+                'qi': 'AJd7yPx3l6dEoYNkhGL/mGURwOBVq54HIh2O8BAJZE5gKgmtOnDndYlvNn2Nt3+O40bDM281PamSDN6lcbfTTcMmqzPWx0'
+                      'LWSga1w04ugaQIJltfJpxVaelVL4IydKlPQ8hU6Jp8H1EIdC15U4D3bsvWVBHXewqhKChqmBbrRIUk',
+            }
+        ]
+    }
+
+    JWT_OIDC_TEST_PRIVATE_KEY_PEM = """-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA3VRgQebxojvZlZv+rySZioGXjK5Ky4YOZ0LxFbQztwY93XaP
+eutDKAp7wNaYfRrx1Gwu0PpBgj+Lmg3vTqPvjRb0Uc23hr1cT68hHxgjIjvk7xXz
+Gv66xwIPOWZXed4LcLbdCf67qvjjFT3ZD7poXnXM5lWlBHrIHQ5s7iUia9eHwoe9
+6dDRzvDGrsoUvs1z5BdKvXby5usNQSWl6a0jrJ0KBatIY//9k8mwmDZ7iBEz4ag9
+ly1KXiwMQfzdSo5r/xX63sV/8P33AjLtDEZYTUDr/YVMyh7G5MocyIDOM89dXpX3
+qdRY1RvTK0+Tg+hshMZQyEXO8qui/FrXhCrPVwIDAQABAoIBAHl04A3KKjeZGGId
+ZLnAH/H+A6hTzP+65RSNi7cZWHfLmQ97DGmryQKkHh1Ipg2hR6wGYfqUGnbbYER9
++SDynXaTbiel+FycdZfUxxxFJqKWs57wMKRTvTOQUcJyAvcBfs2vy8S8YUgFpLf3
+ZLJY3QVZJ8QOo6u9pSssy2I0RpteefjvLwXhDnLbICaBA7KOaSH+DMUFXnQ93RTk
+YwF9rn27A4cYcNzleazqc2AkOCgrDhWHBBVlULNo/z0pFIm8tqwpsX1Z/xWH14DY
+WJTT3BHWGfsLUwms7I/1YnUOIrtUdfHtW+34aet9Pqs40Qj8DS2XHalorIDDUfyX
+xSp+W6ECgYEA8q6SzNQ5NspxnO5dWjcX7xXtkJarAXlRczpYguhZcN0QJ/45bYzp
+V4RyrB3YLK9fY1NIVea2m2Cd9oM1vjHtyKb2Y7ZkQOvHKofw3MxIOvF5YZrvXTLP
+TN6QjvG69zl/OzSE/6locG6YEMiPnAsMW3bnIC3uou+YyHW/sHis/60CgYEA6XnT
+HcAzjKOtd5XDlXYgUqlhvgCDikmqOG4lxg5kIKKNajp/NX0KW8kYqOQBe/HeyS1x
+6rukvOFMPJhsKri4x7n0KFHIfGID0ynv4WdWzSqtO57wYSmTe4bv4J7u5jNLBxkZ
+8/aYjdt1eqFzbf32eV4FYJrAQHlLYZoY9jnn25MCgYEA3UC36jLabs+nQXI4fhWY
+pouRaa9T/SYEUk+xfrgjQzjoj+3BodVEsFu6yJz1B9hj2QSHAHo1pfcyTRtXFi4j
+IjrGjCYvxNixXl9OA5/jgonBJnHBJXE7elO36/sLgHZVPz8kuopTA55w2WxhMd0I
+ySLgmYAG/1n+K1TfDR8YaokCgYB87g8lkD8FNmAP6Tdqtna9RJ1kienZCWnoIChe
+Pj0dqV16RirjeDEexBBJ7xdMNzQ6+fJG5HlWCEg+9GCMy6M0XDBlkr1wsRHS4FHX
+jvBHgFqJ2JZPp2ufYajhzKmQzEmNVsUoYf9niNLn95RIeuh0MPc3phbRaRYI9+f7
+eSizuQKBgQCXe8j8d5enRKGDZIRi/5hlEcDgVaueByIdjvAQCWROYCoJrTpw53WJ
+bzZ9jbd/juNGwzNvNT2pkgzepXG3003DJqsz1sdC1koGtcNOLoGkCCZbXyacVWnp
+VS+CMnSpT0PIVOiafB9RCHQteVOA927L1lQR13sKoSgoapgW60SFJA==
+-----END RSA PRIVATE KEY-----"""
 
 
 class DockerConfig(_Config):  # pylint: disable=too-few-public-methods

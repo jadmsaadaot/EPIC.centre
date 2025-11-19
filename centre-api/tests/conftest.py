@@ -16,6 +16,7 @@ from random import random
 
 import pytest
 from faker import Faker
+from flask import g
 from flask_migrate import Migrate, upgrade
 from sqlalchemy import event, text
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -33,31 +34,34 @@ CONFIG = get_named_config('testing')
 @pytest.fixture(scope='session')
 def app():
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app(run_mode='testing')
-    with _app.app_context():
-        # Create the schema each time before the test starts
-        drop_schema_sql = text(
-            f"""              CREATE SCHEMA IF NOT EXISTS public;
-                             GRANT ALL ON SCHEMA public TO {CONFIG.DB_USER};
-                             GRANT ALL ON SCHEMA public TO public;
-                          """
-        )
+    import os
+    # Change to the project root directory to ensure migrations are found
+    original_dir = os.getcwd()
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    os.chdir(project_root)
 
-        sess = _db.session()
-        sess.execute(drop_schema_sql)
-        sess.commit()
-        upgrade()  # Apply migrations
-        yield _app
-        _db.session.remove()
+    try:
+        _app = create_app(run_mode='testing')
+        with _app.app_context():
+            # Create the schema each time before the test starts
+            drop_schema_sql = text(
+                f"""              CREATE SCHEMA IF NOT EXISTS public;
+                                 GRANT ALL ON SCHEMA public TO {CONFIG.DB_USER};
+                                 GRANT ALL ON SCHEMA public TO public;
+                              """
+            )
+
+            sess = _db.session()
+            sess.execute(drop_schema_sql)
+            sess.commit()
+            upgrade()  # Apply migrations
+            yield _app
+            _db.session.remove()
+    finally:
+        os.chdir(original_dir)
     return _app
 
 
-@pytest.fixture(autouse=True)
-def app_context(app):
-    """Automatically push and pop the app context for every test."""
-    with app.app_context():
-        # g.jwt_oidc_token_info = TokenJWTClaims.default
-        yield
 
 
 @pytest.fixture(scope='function')
@@ -128,7 +132,6 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
 def session(app, db):  # db is your _db from submit_api.models
     """Return a function-scoped session with nested transaction."""
     with app.app_context():
-        # g.jwt_oidc_token_info = TokenJWTClaims.default
         connection = db.engine.connect()
         transaction = connection.begin()
 
@@ -174,3 +177,113 @@ def client_id():
     #     _id = (base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
 
     return f'client-{_id}'
+
+
+@pytest.fixture()
+def auth_header(jwt, request):
+    """Create an auth header for tests.
+
+    By default creates DST admin header. Tests can override by using parametrize:
+    @pytest.mark.parametrize('auth_header', [TestJwtClaims.regular_user_role.value], indirect=True)
+    """
+    from tests.utilities.factory_scenarios import TestJwtClaims
+    from tests.utilities.factory_utils import factory_auth_header
+
+    # Check if test passed a custom claims parameter
+    claims = getattr(request, 'param', TestJwtClaims.dst_admin_role.value)
+
+    headers = factory_auth_header(jwt=jwt, claims=claims)
+    return headers
+
+
+@pytest.fixture()
+def dst_admin_header(jwt):
+    """Create a DST admin header for tests."""
+    from tests.utilities.factory_scenarios import TestJwtClaims
+    from tests.utilities.factory_utils import factory_auth_header
+
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.dst_admin_role.value)
+    return headers
+
+
+@pytest.fixture()
+def regular_user_header(jwt):
+    """Create a regular user header for tests."""
+    from tests.utilities.factory_scenarios import TestJwtClaims
+    from tests.utilities.factory_utils import factory_auth_header
+
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.regular_user_role.value)
+    return headers
+
+
+@pytest.fixture(autouse=True)
+def mock_auth_api_service(mocker):
+    """Automatically mock all Auth API service calls for all tests."""
+    # Mock the get_user_by_id method to return a basic user
+    mocker.patch(
+        'centre_api.services.auth_api_service.AuthApiService.get_user_by_id',
+        return_value={
+            'id': fake.uuid4(),
+            'username': 'TEST_USER',
+            'firstName': 'Test',
+            'lastName': 'User',
+            'email': 'test.user@gov.bc.ca',
+            'enabled': True,
+            'groups': []
+        }
+    )
+
+    # Mock get_user_by_username
+    mocker.patch(
+        'centre_api.services.auth_api_service.AuthApiService.get_user_by_username',
+        return_value={
+            'id': fake.uuid4(),
+            'username': 'TEST_USER',
+            'firstName': 'Test',
+            'lastName': 'User',
+            'email': 'test.user@gov.bc.ca',
+            'enabled': True,
+            'groups': []
+        }
+    )
+
+    # Mock get_users
+    mocker.patch(
+        'centre_api.services.auth_api_service.AuthApiService.get_users',
+        return_value=[]
+    )
+
+    # Mock get_group
+    mocker.patch(
+        'centre_api.services.auth_api_service.AuthApiService.get_group',
+        return_value={
+            'id': fake.uuid4(),
+            'name': 'TEST_GROUP',
+            'path': '/TEST_GROUP',
+            'subGroups': []
+        }
+    )
+
+    # Mock update_user_group
+    mocker.patch(
+        'centre_api.services.auth_api_service.AuthApiService.update_user_group',
+        return_value=None
+    )
+
+    # Mock delete_all_user_group_mapping
+    mocker.patch(
+        'centre_api.services.auth_api_service.AuthApiService.delete_all_user_group_mapping',
+        return_value=None
+    )
+
+    # Mock patch_user
+    mocker.patch(
+        'centre_api.services.auth_api_service.AuthApiService.patch_user',
+        return_value=None
+    )
+
+    # Mock get_group_members
+    mocker.patch(
+        'centre_api.services.auth_api_service.AuthApiService.get_group_members',
+        return_value=[]
+    )
